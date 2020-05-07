@@ -56,7 +56,7 @@ plotAlignment <- function(snpFiles, gapFiles, seqlen, names=NULL, barwidth=0.7,
   
   if (add == FALSE) {
       plot(1, type='n', ylim=c(0,nrSeqs+1), xlim=c(1,seqlen), xaxs='i', yaxs='i', 
-           yaxt='n', xlab="", ylab="", ...)
+           yaxt='n', xlab="", ylab="", axes=FALSE, ...)
   }
   
   if (plotXAxis) {
@@ -70,6 +70,8 @@ plotAlignment <- function(snpFiles, gapFiles, seqlen, names=NULL, barwidth=0.7,
       #############
       # Read data #
       #############
+    
+      print(snpFiles[i])
       
       # Read SNPs
       snps     <- read.csv(snpFiles[i], skip=1, colClasses = c("numeric", "character", "character"))
@@ -89,6 +91,7 @@ plotAlignment <- function(snpFiles, gapFiles, seqlen, names=NULL, barwidth=0.7,
           }
       }
 
+      print(gapFiles[i])
     
       # Read gaps and complement
       # (probably needs a little more robust testing)
@@ -116,7 +119,7 @@ plotAlignment <- function(snpFiles, gapFiles, seqlen, names=NULL, barwidth=0.7,
       
       # Rectangles
       for (j in 1:nrow(contigs)) {
-          rect(contigs$start[j], i-barwidth, contigs$end[j], i+barwidth, col=seqCol[i], border=seqBorder[i], lwd=0.5)
+          rect(contigs$start[j], i-barwidth, contigs$end[j], i+barwidth, col=seqCol[i], border=seqBorder[i], lwd=0.5, xpd=TRUE)
       }
       
       # SNPs and ambiguous sites
@@ -154,7 +157,7 @@ plotAlignment <- function(snpFiles, gapFiles, seqlen, names=NULL, barwidth=0.7,
 
 
 
-plotSNPHist <- function(snpTable, cutoff=2, ylim=NULL, plotGrid=TRUE, 
+plotSNPHist <- function(snpTable, cutoff=0, ylim=NULL, plotGrid=TRUE, 
                         col=mPal(oxCols$gray6), labelCol=mPal(oxCols$red2), gridCol=mPal(oxCols$gray3), 
                         cex.axis=0.8) {
   
@@ -166,20 +169,20 @@ plotSNPHist <- function(snpTable, cutoff=2, ylim=NULL, plotGrid=TRUE,
         }
         
         if (is.null(ylim)) {
-            ylim   <- range(pretty(c(0, round(max(unlist(snpTable))))))
+            ylim   <- range(pretty(c(0, 2+round(max(unlist(snpTable))))))
         }
     } else {
         ylim <- c(0,1)
     }
     
-    
-    
     plot(1, type='n', ylim=ylim, xlim=c(1,seqlen), xaxs='i', yaxs='i', 
          yaxt='n', xlab="", ylab="", bty='n', axes=FALSE)
+
+    yticks <- unique(floor(axTicks(2)))
     
     if (plotGrid) {
-        #abline(h=1:(max(ylim)-1), lty=3, lwd=0.5)
-        grid(nx=0, ny=NULL, lwd=0.5, col=gridCol)
+        abline(h=yticks[-1], lty=3, lwd=0.5, col=gridCol)
+        #grid(nx=0, ny=NULL, lwd=0.5, col=gridCol)
     }
     
     # SNPs
@@ -189,12 +192,12 @@ plotSNPHist <- function(snpTable, cutoff=2, ylim=NULL, plotGrid=TRUE,
     }
     
     axis(1, at=c(0, axTicks(1), seqlen), cex.axis=cex.axis, xpd=TRUE)
-    axis(2, las=1, cex.axis=cex.axis)
+    axis(2, las=1, cex.axis=cex.axis, at=yticks)
     
     
     # Label SNPs > cutoff
     if (max(y) > cutoff) {
-        text(x[y > cutoff], y[y > cutoff]+1.5, names(snpTable)[y > cutoff], offset = c(0,3), srt=45, cex=cex.axis, col=labelCol), xpd=TRUE)
+        text(x[y > cutoff], y[y > cutoff]+(0.15*ylim[2]), names(snpTable)[y > cutoff], offset = c(0,3), srt=45, cex=cex.axis, col=labelCol, xpd=TRUE)
     }
   
 }

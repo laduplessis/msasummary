@@ -169,7 +169,7 @@ def saveGaps(fname, gapStarts, gapEnds, gapLengths):
 
 
 ################################################################################################################################
-# Histogram
+# Sequence histogram
 
 def seqhist(msa, alphabet, normalise=False):
 	
@@ -212,6 +212,50 @@ def saveseqhist(hist, ids, alphabet, fname):
 
 
 
+################################################################################################################################
+# Site histogram
+
+def msahist(msa, alphabet, normalise=False):
+	
+	histmat = np.zeros([msa.get_alignment_length(), len(alphabet)], dtype=float if normalise else int)	
+
+	for i in range(0, msa.get_alignment_length()):
+		col = msa[:,i]
+
+		# Old slow way to get column histogram
+	 	#coldict = dict((c, col.count(c)) for c in col)
+
+	 	# Faster way
+		coldict = collections.Counter(col.upper())
+	 	
+	 	# Mising characters not in alphabet
+		for c in coldict.keys():
+			if (c not in alphabet):
+				sys.stdout.write(c+" not in alphabet!\n")
+
+		total = 0		
+		for j in range(0,len(alphabet)):
+			c = alphabet[j]
+			if (c in coldict.keys()):
+				histmat[i,j] = coldict[c]
+				total += coldict[c]						
+
+		if (normalise):
+			histmat[i,:] /= total
+	#
+	return histmat
+#
+
+
+def savehist(hist, alphabet, fname):
+
+	outfile = open(fname,"w")
+	outfile.write(",".join(alphabet)+"\n")   
+	for i in range(0,hist.shape[0]):
+		outfile.write(",".join(map(str, hist[i,:]))+"\n")
+	outfile.close()
+
+#
 
 
 ####################################################################################################################################
@@ -299,17 +343,19 @@ if __name__ == "__main__":
 
 
 	if (reference != ""):
-		ref = SeqIO.read(reference, filetype).upper()
-		refid = ref.id
+		ref   = SeqIO.read(reference, filetype).upper()
+		#refid = ref.id
 	else:
 		ref = msa[0]
-		refidparts = [ref.id.split(fasep)[j] for j in seqidfields]
-		refid      = fasep.join(refidparts)
+	refidparts = [ref.id.split(fasep)[j] for j in seqidfields]
+	refid      = fasep.join(refidparts)
 
 	if (not os.path.exists(outputpath)):
 	    os.mkdir(outputpath)
 
 
+	statsfile = open(outputpath + "stats.csv", "w")
+	statsfile.write(",".join(["taxon", "name", "SNPs", "numgaps", "gaps"])+"\n")
 	for i in range(0, len(msa)):
 		seq = msa[i]	
 		sys.stdout.write(seq.id+"\t")
@@ -327,10 +373,19 @@ if __name__ == "__main__":
 		(gapStarts, gapEnds, gapLengths) = gapScanner(ref.seq, seq.seq, ambiguousAreGaps=ambiguousGaps)
 		sys.stdout.write("%5d gaps\n" % len(gapStarts))
 		saveGaps(outputpath + refid + "_" + fileid + ".gaps.csv", gapStarts, gapEnds, gapLengths)
-		
-	# Get base composition
+
+		statsfile.write(",".join([seq.id, fileid, str(len(snps)), str(len(gapStarts)), str(sum(gapLengths))])+"\n")
+	statsfile.close()
+
+
+	# Get base composition of sequences
 	(seqids, histmat) = seqhist(msa, alphabet, normalise=normalise)
 	saveseqhist(histmat, seqids, alphabet, outputpath+inputfile[inputfile.rfind("/")+1:inputfile.rfind(".")]+".seqhist.csv")
+
+	# Get base composition of sites
+	sitehistmat = msahist(msa, alphabet, normalise=normalise)
+	savehist(sitehistmat, alphabet, outputpath+inputfile[inputfile.rfind("/")+1:inputfile.rfind(".")]+".hist.csv")
+
 
 	end = time.time()
 	sys.stdout.write("Total time taken: "+str(end-start)+" seconds\n")
