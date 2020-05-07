@@ -5,7 +5,7 @@
 #' Scans through all the SNP and gap files in the lists of files 
 #' and for each sequence plots the regions that are covered as 
 #' rectangles and indicate SNPs and ambiguous sites.
-#' The input files should be produced by msasummary.py
+#' The input files should be produced by msastats.py
 #' 
 #' @param snpFiles    List of filenames containing SNP and ambiguous site positions
 #'                    for each sequence, produced by msasummary.py
@@ -91,8 +91,6 @@ plotAlignment <- function(snpFiles, gapFiles, seqlen, names=NULL, barwidth=0.7,
           }
       }
 
-      print(gapFiles[i])
-    
       # Read gaps and complement
       # (probably needs a little more robust testing)
       gaps <- read.csv(gapFiles[i], skip=1)
@@ -156,7 +154,21 @@ plotAlignment <- function(snpFiles, gapFiles, seqlen, names=NULL, barwidth=0.7,
 
 
 
-
+#' Plot a histograms of SNPs across a genome
+#' 
+#' For each genome position plot the number of SNPs at that position within the alignment, 
+#' using the output from plotAlignment. This is similar to the entropy plot on NextStrain. 
+#' All SNPs with frequency higher than cutoff will be labelled.
+#' 
+#' @param snpTable  Output from plotAlignment. List with keys as SNPs, e.g. G2320A and values 
+#'                  the frequency of the SNP
+#' @param cutoff    Label SNPs with a frequency higher than the cutoff
+#' @param ylim      y-axis limits. Defaults to c(0, 2 + max(snpTable))
+#' @param plotGrid  Plot horizontal grid lines
+#' @param col       Colour of the histogram
+#' @param labelCol  Colour of the labels (for individual SNP positions)
+#' @param gridCol   Colour of the grid lines
+#' @param cex.axis
 plotSNPHist <- function(snpTable, cutoff=0, ylim=NULL, plotGrid=TRUE, 
                         col=mPal(oxCols$gray6), labelCol=mPal(oxCols$red2), gridCol=mPal(oxCols$gray3), 
                         cex.axis=0.8) {

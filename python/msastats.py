@@ -4,7 +4,7 @@ from optparse import OptionParser
 from Bio import AlignIO, SeqIO
 
 # Given an alignment and a reference sequence find location of all mutations (SNPs) and gaps in sequences wrt the reference
-# Also return the base composition (histogram of nucleotides) for each sequence in the alignment
+# Also return the base composition (histogram of nucleotides) for each sequence and site in the alignment
 ################################################################################################################################
 #
 # Can be used as a standalone program or functions can be called from other Python scripts
