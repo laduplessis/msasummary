@@ -34,6 +34,40 @@ from Bio import AlignIO, SeqIO
 ################################################################################################################################
 
 
+def checkLengths(sequence1, sequence2):
+	"""
+	Check length of two sequences are identical and throws an error if not
+
+	"""
+
+	if (len(sequence1) != len(sequence2)):
+		sys.stdout.write("Error! Sequence lengths differ! Exiting...\n")
+		sys.exit()
+
+#
+
+
+def preprocess(sequence, ambiguousAreGaps=False):
+	"""
+	Preprocess a sequence for easier analysis later
+
+	Replace all gap characters with N
+	Change all characters to upper case
+
+	"""
+
+	if (ambiguousAreGaps):
+		gapchars  = ["_", "-", "R", "Y", "W", "S", "K", "M", "D", "V", "H", "B"]
+	else:
+		gapchars  = ["_", "-"]
+	
+	sequence  = str(sequence).upper()
+	for c in gapchars:
+		sequence  = sequence.replace(c, "N")
+
+	return sequence
+#
+
 
 ################################################################################################################################
 # SNPs
@@ -49,23 +83,9 @@ def snpScanner(reference, sequence, ambiguousAreGaps=False):
 
 	"""
 
-
-	if (len(reference) != len(sequence)):
-		sys.stdout.write("Error! Sequence lengths differ! Exiting...\n")
-		sys.exit()
-
-
-	if (ambiguousAreGaps):
-		gapchars  = ["_", "-", "R", "Y", "W", "S", "K", "M", "D", "V", "H", "B"]
-	else:
-		gapchars  = ["_", "-"]
-
-	reference = str(reference).upper()
-	sequence  = str(sequence).upper()
-	for c in gapchars:
-		reference = reference.replace(c,"N")
-		sequence  = sequence.replace(c, "N")
-
+	checkLengths(reference, sequence)
+	reference = preprocess(reference)
+	sequence  = preprocess(sequence)
 
 	snps = []
 	for i in range(0, len(reference)):
@@ -102,24 +122,12 @@ def gapScanner(reference, sequence, ambiguousAreGaps=False):
 		All ambiguous nucleotides are treated as gaps
 	else
 		Assumes that N, - and _ are the only gap characters
+
 	"""
 
-	if (len(reference) != len(sequence)):
-		sys.stdout.write("Error! Sequence lengths differ! Exiting...\n")
-		sys.exit()
-
-
-	if (ambiguousAreGaps):
-		gapchars  = ["_", "-", "R", "Y", "W", "S", "K", "M", "D", "V", "H", "B"]
-	else:
-		gapchars  = ["_", "-"]
-
-	reference = str(reference).upper()
-	sequence  = str(sequence).upper()
-	for c in gapchars:
-		reference = reference.replace(c,"N")
-		sequence  = sequence.replace(c, "N")
-
+	checkLengths(reference, sequence)
+	reference = preprocess(reference)
+	sequence  = preprocess(sequence)
 
 	gap        = 0
 	gapStarts  = []
@@ -172,6 +180,12 @@ def saveGaps(fname, gapStarts, gapEnds, gapLengths):
 # Sequence histogram
 
 def seqhist(msa, alphabet, normalise=False):
+	"""
+	Returns the nucleotide base composition for each sequence in the alignment
+
+	Only counts bases in the alphabet
+
+	"""
 	
 	histmat = np.zeros([len(msa), len(alphabet)], dtype=float if normalise else int)	
 
@@ -202,6 +216,7 @@ def seqhist(msa, alphabet, normalise=False):
 	return (seqids, histmat)
 #
 
+
 def saveseqhist(hist, ids, alphabet, fname):
 
 	outfile = open(fname,"w")
@@ -216,7 +231,13 @@ def saveseqhist(hist, ids, alphabet, fname):
 # Site histogram
 
 def msahist(msa, alphabet, normalise=False):
-	
+	"""
+	Returns the nucleotide base composition for each site (column) in the alignment
+
+	Only counts bases in the alphabet
+
+	"""
+
 	histmat = np.zeros([msa.get_alignment_length(), len(alphabet)], dtype=float if normalise else int)	
 
 	for i in range(0, msa.get_alignment_length()):
@@ -341,7 +362,6 @@ if __name__ == "__main__":
 		msa[i].seq = msa[i].seq.upper()
 
 
-
 	if (reference != ""):
 		ref   = SeqIO.read(reference, filetype).upper()
 		#refid = ref.id
@@ -352,6 +372,9 @@ if __name__ == "__main__":
 
 	if (not os.path.exists(outputpath)):
 	    os.mkdir(outputpath)
+
+	if (preprocess(ref, ambiguousAreGaps=ambiguousAreGaps) != ref):
+		sys.stdout.write("Warning! Reference sequence contains gaps or ambiguous sites. Proceed with caution...\n\n")
 
 
 	statsfile = open(outputpath + "stats.csv", "w")
